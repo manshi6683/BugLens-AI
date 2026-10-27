@@ -1,0 +1,12 @@
+**/node_modules/
+.env
+.env.*
+!.env.example
+**/dist/
+**/build/
+**/playwright-report/
+**/test-results/
+
+backend/buglens.db
+backend/buglens.db-shm
+backend/buglens.db-wal

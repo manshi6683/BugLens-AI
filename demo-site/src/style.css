@@ -1,0 +1,105 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0b1020;
+  color: #e8edf7;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  max-width: 760px;
+  margin: 45px auto;
+  padding: 20px;
+}
+
+header {
+  margin-bottom: 30px;
+}
+
+.tag {
+  color: #8b9cff;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 36px;
+}
+
+header > p:last-child {
+  color: #9aa7bd;
+}
+
+.card {
+  margin: 22px 0;
+  padding: 25px;
+  background: #141c30;
+  border: 1px solid #293550;
+  border-radius: 14px;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+input:not([type="checkbox"]),
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #35435f;
+  border-radius: 7px;
+  background: #0b1020;
+  color: white;
+  font: inherit;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+button {
+  margin-top: 12px;
+  padding: 13px;
+  border: 0;
+  border-radius: 7px;
+  background: #6578ff;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #5265eb;
+}
+
+#registration-message,
+#contact-message {
+  color: #86efac;
+  font-size: 13px;
+}
