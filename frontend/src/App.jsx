@@ -37,6 +37,8 @@ function App() {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [expandedBugReportId, setExpandedBugReportId] = useState(null);
+  const [bugReportSearch, setBugReportSearch] = useState("");
+  const [bugReportSort, setBugReportSort] = useState("newest");
   async function startScan(event) {
     event.preventDefault();
     setError("");
@@ -334,7 +336,16 @@ function App() {
       setBugReportsLoading(false);
     }
   }
+
   const filteredBugReports = savedBugReports.filter((report) => {
+    const searchTerm = bugReportSearch.trim().toLowerCase();
+
+    const matchesSearch =
+      !searchTerm ||
+      (report.report_id || "").toLowerCase().includes(searchTerm) ||
+      (report.test_name || "").toLowerCase().includes(searchTerm) ||
+      (report.message || "").toLowerCase().includes(searchTerm);
+
     const matchesSeverity =
       severityFilter === "All" || report.severity === severityFilter;
 
@@ -344,8 +355,38 @@ function App() {
     const matchesStatus =
       statusFilter === "All" || report.status === statusFilter;
 
-    return matchesSeverity && matchesPriority && matchesStatus;
+    return (
+      matchesSearch &&
+      matchesSeverity &&
+      matchesPriority &&
+      matchesStatus
+    );
   });
+
+
+  const sortedBugReports = [...filteredBugReports].sort((a, b) => {
+    if (bugReportSort === "severity") {
+      const severityRank = {
+        Critical: 4,
+        High: 3,
+        Medium: 2,
+        Low: 1,
+      };
+
+      return (
+        (severityRank[b.severity || "Medium"] || 2) -
+        (severityRank[a.severity || "Medium"] || 2)
+      );
+    }
+
+    if (bugReportSort === "oldest") {
+      return new Date(a.created_at) - new Date(b.created_at);
+    }
+
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+
 
   async function saveFailedFormTests(result) {
     const tests = (result?.tests || []).filter(
@@ -784,6 +825,38 @@ function App() {
             </span>
           </div>
 
+          <div className="bug-report-search">
+            <input
+              type="search"
+              value={bugReportSearch}
+              onChange={(event) => setBugReportSearch(event.target.value)}
+              placeholder="Search by Bug ID, test name, or error message..."
+              aria-label="Search bug reports"
+            />
+            {bugReportSearch && (
+              <button
+                type="button"
+                className="export-button"
+                onClick={() => setBugReportSearch("")}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="bug-report-sort">
+            <label htmlFor="bug-report-sort">Sort by</label>
+            <select
+              id="bug-report-sort"
+              value={bugReportSort}
+              onChange={(event) => setBugReportSort(event.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="severity">Highest Severity</option>
+            </select>
+          </div>
+
           <div className="bug-report-filters">
             <label>
               Severity
@@ -836,7 +909,7 @@ function App() {
             filteredBugReports.length > 0 ? (
               <div className="bug-reports-list">
 
-                {filteredBugReports.map((report) => (
+                {sortedBugReports.map((report) => (
                   <article className="bug-report-card" key={report.id}>
                     <div className="bug-report-card-header">
                       <div>
