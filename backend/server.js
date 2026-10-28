@@ -3,6 +3,7 @@ const { testForms } = require("./scanner/formTester");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const Database = require("better-sqlite3");
 const { scanWebsite } = require("./scanner/websiteScanner");
 const DB_PATH = process.env.BUGLENS_DB_PATH ||
@@ -300,7 +301,7 @@ app.post("/api/form-tests", async (req, res) => {
                             reportId,
                             test.name,
                             test.message || "Automated form test failed.",
-                            test.screenshot || null,
+                            getValidScreenshot(test.screenshot),
                             classification.severity,
                             classification.priority
                         );
@@ -359,6 +360,37 @@ app.get("/api/bug-reports", (req, res) => {
         });
     }
 });
+function getValidScreenshot(screenshot) {
+    if (typeof screenshot !== "string") {
+        return null;
+    }
+
+    const prefix = "/reports/form-test-screenshots/";
+
+    if (!screenshot.startsWith(prefix)) {
+        return null;
+    }
+
+    const filename = screenshot.slice(prefix.length);
+
+    if (!filename || path.basename(filename) !== filename) {
+        return null;
+    }
+
+    if (!filename.toLowerCase().endsWith(".png")) {
+        return null;
+    }
+
+    const screenshotPath = path.join(
+        __dirname,
+        "reports",
+        "form-test-screenshots",
+        filename
+    );
+
+    return fs.existsSync(screenshotPath) ? screenshot : null;
+}
+
 function classifyBug(testName = "", message = "") {
     const text = `${testName} ${message}`.toLowerCase();
 
@@ -442,7 +474,7 @@ app.post("/api/bug-reports", (req, res) => {
             String(testName),
             message ? String(message) : "",
             status,
-            screenshot ? String(screenshot) : null,
+            getValidScreenshot(screenshot),
             status,
             classification.severity,
             classification.priority
@@ -543,4 +575,4 @@ if (require.main === module) {
     process.on("SIGTERM", shutdown);
 }
 
-module.exports = { app, db, startServer };
+module.exports = { app, db, startServer, getValidScreenshot };
