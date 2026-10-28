@@ -1,13 +1,15 @@
+const crypto = require("crypto");
 const { testForms } = require("./scanner/formTester");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const Database = require("better-sqlite3");
 const { scanWebsite } = require("./scanner/websiteScanner");
-const db = new Database(path.join(__dirname, "buglens.db"));
-const app = express();
-const PORT = 5000;
+const DB_PATH = process.env.BUGLENS_DB_PATH ||
+    path.join(__dirname, "buglens.db");
 
+const db = new Database(DB_PATH); const app = express();
+const PORT = Number(process.env.PORT) || 5000;
 db.pragma("journal_mode = WAL");
 
 db.exec(`
@@ -242,17 +244,100 @@ app.post("/api/form-tests", async (req, res) => {
     try {
         const result = await testForms(parsedUrl.href);
 
+        const bugReportSync = {
+            reportsOpened: 0,
+            reportsResolved: 0,
+            skipped: 0,
+        };
+
+        if (result.status === "completed" && Array.isArray(result.tests)) {
+            const saveBug = db.prepare(`
+                INSERT INTO bug_reports (
+                    report_id, test_name, message, status,
+                    screenshot, resolved_at, severity, priority
+                )
+                VALUES (?, ?, ?, 'OPEN', ?, NULL, ?, ?)
+                ON CONFLICT(report_id) DO UPDATE SET
+                    test_name = excluded.test_name,
+                    message = excluded.message,
+                    status = 'OPEN',
+                    screenshot = COALESCE(excluded.screenshot, bug_reports.screenshot),
+                    resolved_at = NULL,
+                    severity = excluded.severity,
+                    priority = excluded.priority
+            `);
+
+            const resolveBug = db.prepare(`
+                UPDATE bug_reports
+                SET status = 'RESOLVED',
+                    resolved_at = CURRENT_TIMESTAMP,
+                    message = ?
+                WHERE report_id = ?
+                  AND test_name = ?
+                  AND status IN ('OPEN', 'FAIL')
+            `);
+
+            const syncReports = db.transaction(() => {
+                for (const test of result.tests) {
+                    if (!test.name || !["PASS", "FAIL"].includes(test.status)) {
+                        bugReportSync.skipped++;
+                        continue;
+                    }
+
+                    const reportId = "FORM-" + crypto
+                        .createHash("sha256")
+                        .update(`${parsedUrl.href}::${test.name}`)
+                        .digest("hex")
+                        .slice(0, 20);
+
+                    if (test.status === "FAIL") {
+                        const classification = classifyBug(
+                            test.name,
+                            test.message || ""
+                        );
+
+                        saveBug.run(
+                            reportId,
+                            test.name,
+                            test.message || "Automated form test failed.",
+                            test.screenshot || null,
+                            classification.severity,
+                            classification.priority
+                        );
+
+                        bugReportSync.reportsOpened++;
+                    } else {
+                        const update = resolveBug.run(
+                            test.message || "Test passed on the latest run.",
+                            reportId,
+                            test.name
+                        );
+
+                        if (update.changes > 0) {
+                            bugReportSync.reportsResolved++;
+                        }
+                    }
+                }
+            });
+
+            syncReports();
+        }
+
         return res.status(result.status === "completed" ? 200 : 422).json({
             success: result.status === "completed",
             result,
+            bugReportSync,
         });
     } catch (error) {
+        console.error("Form testing or bug-report synchronization failed:", error);
+
         return res.status(500).json({
             success: false,
-            message: "Form testing failed.",
+            message: "Form testing or bug-report synchronization failed.",
         });
     }
 });
+
 // Get saved bug reports
 
 app.get("/api/bug-reports", (req, res) => {
@@ -425,15 +510,37 @@ app.post("/api/bug-reports/resolve", (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`BugLens AI API running at http://localhost:${PORT}`);
-    console.log("SQLite scan history enabled.");
-});
+let server;
 
-function shutdown() {
-    db.close();
-    process.exit(0);
+function startServer() {
+    server = app.listen(PORT, () => {
+        console.log(`BugLens AI API running at http://localhost:${PORT}`);
+        console.log(`SQLite database: ${DB_PATH}`);
+    });
+
+    return server;
 }
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+function shutdown() {
+    if (server) {
+        server.close(() => {
+            if (db.open) {
+                db.close();
+            }
+            process.exit(0);
+        });
+    } else {
+        if (db.open) {
+            db.close();
+        }
+        process.exit(0);
+    }
+}
+
+if (require.main === module) {
+    startServer();
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
+}
+
+module.exports = { app, db, startServer };

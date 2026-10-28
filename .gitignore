@@ -10,3 +10,6 @@
 backend/buglens.db
 backend/buglens.db-shm
 backend/buglens.db-wal
+backend/buglens-test-*.db
+backend/buglens-test-*.db-shm
+backend/buglens-test-*.db-wal

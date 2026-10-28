@@ -1,0 +1,66 @@
+
+name: BugLens AI CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression-tests:
+    name: Run Regression Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install demo-site dependencies
+        working-directory: demo-site
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: backend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start demo website
+        working-directory: demo-site
+        run: |
+          npm run dev -- --host 127.0.0.1 > "$RUNNER_TEMP/demo-site.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/demo-site.pid"
+
+      - name: Wait for demo website
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:5173/ > /dev/null; then
+              echo "Demo website is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          cat "$RUNNER_TEMP/demo-site.log"
+          echo "Demo website failed to start."
+          exit 1
+
+      - name: Run isolated regression suite
+        working-directory: backend
+        env:
+          BUGLENS_DEMO_URL: http://127.0.0.1:5173/
+        run: npm test
