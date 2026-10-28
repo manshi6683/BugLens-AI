@@ -1559,3 +1559,33 @@ footer {
 .bug-report-evidence-preview .bug-report-evidence span {
   display: inline-block;
 }
+
+.bug-report-expanded-details {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.bug-report-expanded-details h4 {
+  margin: 0 0 12px;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.bug-report-expanded-details p {
+  margin: 8px 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.bug-report-expanded-details p strong {
+  color: #1e293b;
+}
+
+.bug-report-card > .export-button {
+  margin-top: 12px;
+}

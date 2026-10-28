@@ -36,6 +36,7 @@ function App() {
   const [severityFilter, setSeverityFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [expandedBugReportId, setExpandedBugReportId] = useState(null);
   async function startScan(event) {
     event.preventDefault();
     setError("");
@@ -873,6 +874,51 @@ function App() {
                       ).toLocaleString()}</span>
                     </div>
 
+                    <button
+                      type="button"
+                      className="export-button"
+                      onClick={() =>
+                        setExpandedBugReportId(
+                          expandedBugReportId === report.id ? null : report.id
+                        )
+                      }
+                      aria-expanded={expandedBugReportId === report.id}
+                    >
+                      {expandedBugReportId === report.id
+                        ? "Hide Details −"
+                        : "View Details +"}
+                    </button>
+
+                    {expandedBugReportId === report.id && (
+                      <div className="bug-report-expanded-details">
+                        <h4>Bug Report Details</h4>
+                        <p>
+                          <strong>Bug ID:</strong> {report.report_id}
+                        </p>
+                        <p>
+                          <strong>Test Name:</strong> {report.test_name}
+                        </p>
+                        <p>
+                          <strong>Severity:</strong> {report.severity || "Medium"}
+                        </p>
+                        <p>
+                          <strong>Priority:</strong> {report.priority || "P3"}
+                        </p>
+                        <p>
+                          <strong>Status:</strong> {report.status}
+                        </p>
+                        <p>
+                          <strong>Actual Result:</strong>{" "}
+                          {report.message || "No error details available."}
+                        </p>
+                        <p>
+                          <strong>Evidence:</strong>{" "}
+                          {report.screenshot
+                            ? "Screenshot attached"
+                            : "No screenshot available"}
+                        </p>
+                      </div>
+                    )}
 
                     {report.screenshot && (
                       <div className="bug-report-evidence-preview">
