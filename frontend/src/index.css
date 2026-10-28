@@ -1513,3 +1513,49 @@ footer {
     box-sizing: border-box;
   }
 }
+
+.bug-report-evidence-preview {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.bug-report-evidence-preview h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.bug-report-evidence-preview .bug-report-evidence {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-decoration: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bug-report-screenshot {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  max-height: 260px;
+  object-fit: contain;
+  object-position: top;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #f9fafb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bug-report-screenshot:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.bug-report-evidence-preview .bug-report-evidence span {
+  display: inline-block;
+}

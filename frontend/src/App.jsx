@@ -873,16 +873,30 @@ function App() {
                       ).toLocaleString()}</span>
                     </div>
 
+
                     {report.screenshot && (
-                      <a
-                        className="bug-report-evidence"
-                        href={`${API_URL}${report.screenshot}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View Failure Screenshot ↗
-                      </a>
+                      <div className="bug-report-evidence-preview">
+                        <h4>Screenshot Evidence</h4>
+                        <a
+                          href={`${API_URL}${report.screenshot}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bug-report-evidence"
+                        >
+                          <img
+                            src={`${API_URL}${report.screenshot}`}
+                            alt={`Failure evidence for ${report.test_name}`}
+                            className="bug-report-screenshot"
+                            loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.style.display = "none";
+                            }}
+                          />
+                          <span>View Full Screenshot ↗</span>
+                        </a>
+                      </div>
                     )}
+
                   </article>
                 ))}
               </div>

@@ -13,3 +13,5 @@ backend/buglens.db-wal
 backend/buglens-test-*.db
 backend/buglens-test-*.db-shm
 backend/buglens-test-*.db-wal
+backend/buglens-backup-before-screenshot-fix.db
+backend/reports/form-test-screenshots/
