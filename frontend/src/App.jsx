@@ -37,8 +37,51 @@ function App() {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [expandedBugReportId, setExpandedBugReportId] = useState(null);
+  const [bugAnalysis, setBugAnalysis] = useState({});
+  const [bugAnalysisLoading, setBugAnalysisLoading] = useState({});
+  const [bugAnalysisError, setBugAnalysisError] = useState({});
   const [bugReportSearch, setBugReportSearch] = useState("");
   const [bugReportSort, setBugReportSort] = useState("newest");
+  const [activeSection, setActiveSection] = useState(
+    window.location.hash || "#home"
+  );
+
+
+  useEffect(() => {
+    const sectionIds = [
+      "scanner",
+      "results",
+      "analytics",
+      "bug-reports",
+      "how-it-works",
+    ];
+
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 180;
+      let currentSection = "#home";
+
+      for (const id of sectionIds) {
+        const section = document.getElementById(id);
+
+        if (section && section.offsetTop <= scrollPosition) {
+          currentSection = `#${id}`;
+        }
+      }
+
+      setActiveSection(currentSection);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+
   async function startScan(event) {
     event.preventDefault();
     setError("");
@@ -189,7 +232,64 @@ function App() {
       `BugLens_Report_${new Date().toISOString().slice(0, 10)}.xlsx`
     );
   }
+  async function exportBugAnalysisReport(report) {
+    const analysis = bugAnalysis[report.id];
 
+    if (!analysis) {
+      alert("Please analyze this bug before exporting.");
+      return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "BugLens AI";
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet("Bug Analysis");
+
+    sheet.columns = [
+      { header: "Field", key: "field", width: 25 },
+      { header: "Details", key: "details", width: 90 },
+    ];
+
+    sheet.addRows([
+      { field: "Bug ID", details: report.report_id || report.id },
+      { field: "Test Name", details: report.test_name || "Not available" },
+      { field: "Actual Result", details: report.message || "Not available" },
+      { field: "Status", details: report.status || "Not available" },
+      { field: "Severity", details: analysis.severity || report.severity || "Not available" },
+      { field: "Priority", details: analysis.priority || report.priority || "Not available" },
+      { field: "Possible Root Cause", details: analysis.rootCause || "Not available" },
+      { field: "Suggested Fix", details: analysis.suggestedFix || "Not available" },
+      {
+        field: "Debugging Steps",
+        details: (analysis.debuggingSteps || [])
+          .map((step, index) => `${index + 1}. ${step}`)
+          .join("\n"),
+      },
+      { field: "Analysis Type", details: analysis.note || "Rule-based analysis" },
+      { field: "Export Date", details: new Date().toLocaleString() },
+    ]);
+
+    sheet.getRow(1).font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+
+    sheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF263B63" },
+    };
+
+    sheet.eachRow((row) => {
+      row.alignment = { vertical: "top", wrapText: true };
+    });
+
+    await downloadWorkbook(
+      workbook,
+      `BugLens_Bug_Analysis_${report.id}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+  }
   async function exportFormTestReport() {
     if (!formTestResult) return;
 
@@ -630,7 +730,53 @@ function App() {
       setFormTestLoading(false);
     }
   }
+  const handleAnalyzeBug = async (report) => {
+    const reportId = report.id;
 
+    setBugAnalysisLoading((prev) => ({
+      ...prev,
+      [reportId]: true,
+    }));
+
+    setBugAnalysisError((prev) => ({
+      ...prev,
+      [reportId]: "",
+    }));
+
+    try {
+      const response = await fetch("http://localhost:5000/api/bug-reports/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          testName: report.test_name || report.testName,
+          message: report.message || "",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Bug analysis failed.");
+      }
+
+      setBugAnalysis((prev) => ({
+        ...prev,
+        [reportId]: data.analysis,
+      }));
+    } catch (error) {
+      setBugAnalysisError((prev) => ({
+        ...prev,
+        [reportId]: error.message || "Unable to analyze this bug.",
+      }));
+    } finally {
+      setBugAnalysisLoading((prev) => ({
+        ...prev,
+        [reportId]: false,
+      }));
+    }
+  };
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -640,9 +786,44 @@ function App() {
         </a>
 
         <p className="nav-heading">WORKSPACE</p>
-        <a className="nav-item active" href="#scanner">◈ <span>Website Scanner</span></a>
-        <a className="nav-item" href="#results">▤ <span>Scan Results</span></a>
-        <a className="nav-item" href="#how-it-works">◎ <span>How it works</span></a>
+        <a
+          className={`nav-item ${activeSection === "#scanner" ? "active" : ""}`}
+          href="#scanner"
+          onClick={() => setActiveSection("#scanner")}
+        >
+          <span>Website Scanner</span>
+        </a>
+
+        <a
+          className={`nav-item ${activeSection === "#results" ? "active" : ""}`}
+          href="#results"
+          onClick={() => setActiveSection("#results")}
+        >
+          ▤ <span>Scan Results</span>
+        </a>
+        <a
+          className={`nav-item ${activeSection === "#how-it-works" ? "active" : ""}`}
+          href="#how-it-works"
+          onClick={() => setActiveSection("#how-it-works")}
+        >
+          ◎ <span>How it works</span>
+        </a>
+
+        <a
+          className={`nav-item ${activeSection === "#bug-reports" ? "active" : ""}`}
+          href="#bug-reports"
+          onClick={() => setActiveSection("#bug-reports")}
+        >
+          🐞 <span>Bug Reports</span>
+        </a>
+        <a
+          className={`nav-item ${activeSection === "#analytics" ? "active" : ""}`}
+          href="#analytics"
+          onClick={() => setActiveSection("#analytics")}
+        >
+          📊 <span>Bug Analytics</span>
+        </a>
+
 
         <div className="sidebar-bottom">
           <span className="status-dot" />
@@ -843,7 +1024,7 @@ function App() {
           )}
         </section>
 
-        <section className="analytics-section">
+        <section className="analytics-section" id="analytics">
           <div className="section-heading">
             <div>
               <h3>Bug Analytics</h3>
@@ -1070,34 +1251,111 @@ function App() {
                     </button>
 
                     {expandedBugReportId === report.id && (
-                      <div className="bug-report-expanded-details">
-                        <h4>Bug Report Details</h4>
-                        <p>
-                          <strong>Bug ID:</strong> {report.report_id}
-                        </p>
-                        <p>
-                          <strong>Test Name:</strong> {report.test_name}
-                        </p>
-                        <p>
-                          <strong>Severity:</strong> {report.severity || "Medium"}
-                        </p>
-                        <p>
-                          <strong>Priority:</strong> {report.priority || "P3"}
-                        </p>
-                        <p>
-                          <strong>Status:</strong> {report.status}
-                        </p>
-                        <p>
-                          <strong>Actual Result:</strong>{" "}
-                          {report.message || "No error details available."}
-                        </p>
-                        <p>
-                          <strong>Evidence:</strong>{" "}
-                          {report.screenshot
-                            ? "Screenshot attached"
-                            : "No screenshot available"}
-                        </p>
-                      </div>
+                      <>
+                        <div className="bug-report-expanded-details">
+                          <h4>Bug Report Details</h4>
+
+                          <p>
+                            <strong>Bug ID:</strong> {report.report_id}
+                          </p>
+
+                          <p>
+                            <strong>Test Name:</strong> {report.test_name}
+                          </p>
+
+                          <p>
+                            <strong>Severity:</strong> {report.severity || "Medium"}
+                          </p>
+
+                          <p>
+                            <strong>Priority:</strong> {report.priority || "P3"}
+                          </p>
+
+                          <p>
+                            <strong>Status:</strong> {report.status}
+                          </p>
+
+                          <p>
+                            <strong>Actual Result:</strong>{" "}
+                            {report.message || "No error details available."}
+                          </p>
+
+                          <p>
+                            <strong>Evidence:</strong>{" "}
+                            {report.screenshot
+                              ? "Screenshot attached"
+                              : "No screenshot available"}
+                          </p>
+
+                          <div className="bug-analysis-actions">
+                            <button
+                              type="button"
+                              className="export-button"
+                              onClick={() => handleAnalyzeBug(report)}
+                              disabled={Boolean(bugAnalysisLoading[report.id])}
+                            >
+                              {bugAnalysisLoading[report.id]
+                                ? "Analyzing..."
+                                : "Analyze Bug"}
+                            </button>
+
+                            {bugAnalysisError[report.id] && (
+                              <p role="alert" className="error-message">
+                                {bugAnalysisError[report.id]}
+                              </p>
+                            )}
+                          </div>
+
+                          {bugAnalysis[report.id] && (
+                            <div className="bug-analysis-result">
+                              <h4>Bug Analysis Results</h4>
+
+                              <p>
+                                <strong>Possible Root Cause:</strong>{" "}
+                                {bugAnalysis[report.id].rootCause}
+                              </p>
+
+                              <p>
+                                <strong>Suggested Fix:</strong>{" "}
+                                {bugAnalysis[report.id].suggestedFix}
+                              </p>
+
+                              <p>
+                                <strong>Severity:</strong>{" "}
+                                {bugAnalysis[report.id].severity}
+                              </p>
+
+                              <p>
+                                <strong>Priority:</strong>{" "}
+                                {bugAnalysis[report.id].priority}
+                              </p>
+
+                              <h5>Debugging Steps</h5>
+
+                              <ol>
+                                {bugAnalysis[report.id].debuggingSteps.map(
+                                  (step, index) => (
+                                    <li key={`${report.id}-debug-${index}`}>
+                                      {step}
+                                    </li>
+                                  )
+                                )}
+                              </ol>
+
+                              <p className="analysis-note">
+                                {bugAnalysis[report.id].note}
+                              </p>
+                              <button
+                                type="button"
+                                className="export-button"
+                                onClick={() => exportBugAnalysisReport(report)}
+                              >
+                                Export Analysis to Excel
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
 
                     {report.screenshot && (

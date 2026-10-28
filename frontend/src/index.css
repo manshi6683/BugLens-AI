@@ -1761,3 +1761,396 @@ footer {
     gap: 8px;
   }
 }
+.bug-analysis-result {
+  color: #1e293b;
+  background: #ffffff;
+}
+
+.bug-analysis-result h4,
+.bug-analysis-result h5,
+.bug-analysis-result p,
+.bug-analysis-result ol,
+.bug-analysis-result li {
+  color: #1e293b;
+  opacity: 1;
+}
+
+.bug-analysis-result ol {
+  padding-left: 24px;
+}
+
+.bug-analysis-result li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.analysis-note {
+  color: #475569;
+  font-style: italic;
+}
+/* Bug Report Details - Dark Theme */
+.bug-report-expanded-details {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #2b3a52;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #182235, #111827);
+  color: #e2e8f0;
+}
+
+.bug-report-expanded-details h4 {
+  color: #f8fafc;
+  margin-bottom: 12px;
+}
+
+.bug-report-expanded-details p {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 7px 0;
+}
+
+.bug-report-expanded-details strong {
+  color: #f1f5f9;
+}
+
+/* Analysis Results */
+.bug-analysis-result {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #334155;
+  border-radius: 9px;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.bug-analysis-result h4,
+.bug-analysis-result h5 {
+  color: #c4b5fd;
+  margin: 10px 0;
+}
+
+.bug-analysis-result p,
+.bug-analysis-result li {
+  color: #dbeafe;
+  line-height: 1.7;
+  opacity: 1;
+}
+
+.bug-analysis-result ol {
+  padding-left: 24px;
+}
+
+.bug-analysis-result li {
+  margin-bottom: 5px;
+}
+
+/* Analysis Note */
+.bug-analysis-result .analysis-note {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #433878;
+  border-radius: 7px;
+  background: #292449;
+  color: #c4b5fd;
+  font-style: italic;
+}
+/* Fix invisible text in Bug Analysis */
+.bug-report-expanded-details,
+.bug-report-expanded-details p,
+.bug-report-expanded-details span,
+.bug-report-expanded-details li {
+  color: #e2e8f0 !important;
+  opacity: 1 !important;
+}
+
+.bug-report-expanded-details strong,
+.bug-report-expanded-details h4,
+.bug-report-expanded-details h5 {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.bug-analysis-result,
+.bug-analysis-result p,
+.bug-analysis-result li,
+.bug-analysis-result ol {
+  color: #e2e8f0 !important;
+  opacity: 1 !important;
+}
+
+.bug-analysis-result h4,
+.bug-analysis-result h5 {
+  color: #c4b5fd !important;
+}
+/* Fix Severity Breakdown dark theme */
+.severity-chart {
+  background: #111827 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #293548;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.severity-chart-label,
+.severity-chart-label span,
+.severity-chart-label strong,
+.severity-chart-percentage {
+  color: #e2e8f0 !important;
+}
+
+.severity-chart-track {
+  background: #273449 !important;
+}
+
+.severity-chart-row {
+  background: transparent !important;
+}
+
+/* Fix white backgrounds in Bug Reports controls */
+.bug-report-search input,
+.bug-report-sort select,
+.bug-report-filters select {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+}
+
+.bug-report-search input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.bug-report-sort label,
+.bug-report-filters label {
+  color: #cbd5e1 !important;
+}
+
+.bug-report-search input:focus,
+.bug-report-sort select:focus,
+.bug-report-filters select:focus {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+/* BugLens AI - Consistent Dark Theme Improvements */
+
+.bug-reports-section,
+.bug-report-card,
+.severity-chart,
+.bug-report-expanded-details,
+.bug-analysis-result {
+  color: #e9eaf3;
+}
+
+.bug-report-card {
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.bug-report-card:hover {
+  border-color: #514174;
+}
+
+.bug-report-search input,
+.bug-report-sort select,
+.bug-report-filters select {
+  background-color: #151a29;
+  color: #e9eaf3;
+  border: 1px solid #35394c;
+  border-radius: 9px;
+}
+
+.bug-report-search input:focus,
+.bug-report-sort select:focus,
+.bug-report-filters select:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px #a78bfa20;
+}
+
+.bug-report-evidence-preview {
+  border-top-color: #35394c;
+}
+
+.bug-report-evidence-preview h4 {
+  color: #e9eaf3;
+}
+
+.bug-report-screenshot {
+  background: #151a29;
+  border-color: #35394c;
+}
+
+@media (max-width: 760px) {
+  .bug-report-search,
+  .bug-report-sort,
+  .bug-report-filters {
+    width: 100%;
+  }
+
+  .bug-report-search {
+    flex-wrap: wrap;
+  }
+
+  .bug-report-search .export-button {
+    max-width: 100%;
+  }
+
+  .bug-report-card {
+    padding: 14px;
+  }
+}
+
+/* BugLens AI - Dashboard Card Polish */
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: #514174;
+  box-shadow: 0 8px 24px #00000020;
+}
+
+.stat-icon {
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.06);
+}
+
+.scan-panel,
+.form-test-panel,
+.bug-reports-section,
+.issues-panel,
+.comparison-group,
+.history-list {
+  box-shadow: 0 8px 24px #00000012;
+}
+
+.section-heading h3,
+.results-heading h3,
+.issues-heading h3 {
+  letter-spacing: -0.35px;
+}
+
+button,
+.secondary-button,
+.export-button {
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card,
+  .stat-icon,
+  button,
+  .secondary-button,
+  .export-button {
+    transition: none;
+  }
+
+  .stat-card:hover,
+  .stat-card:hover .stat-icon {
+    transform: none;
+  }
+}
+
+/* BugLens AI - Layout and Responsive Improvements */
+
+.main-content {
+  width: calc(100% - 245px);
+  margin-left: 245px;
+  padding: 0 32px;
+}
+
+.main-content > * {
+  min-width: 0;
+}
+
+.welcome-section,
+.scan-panel,
+.form-test-panel,
+.bug-reports-section {
+  min-width: 0;
+}
+
+.stats-grid {
+  gap: 16px;
+}
+
+.results-section,
+.history-section,
+.comparison-section,
+.analytics-section {
+  scroll-margin-top: 24px;
+}
+
+.bug-report-card-header,
+.section-heading,
+.results-heading {
+  min-width: 0;
+}
+
+.bug-report-details > span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1150px) {
+  .main-content {
+    padding: 0 24px;
+  }
+
+  .stats-grid {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .main-content {
+    width: 100%;
+    margin-left: 0;
+    padding: 0 16px;
+  }
+
+  .welcome-section {
+    margin-top: 20px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bug-reports-section {
+    padding: 16px;
+  }
+
+  .bug-report-details {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .main-content {
+    padding: 0 10px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-copy h2 {
+    font-size: 27px;
+  }
+}
