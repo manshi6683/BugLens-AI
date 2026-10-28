@@ -337,6 +337,36 @@ function App() {
     }
   }
 
+  const totalBugs = savedBugReports.length;
+
+  const openBugs = savedBugReports.filter(
+    (report) => report.status === "OPEN"
+  ).length;
+
+  const resolvedBugs = savedBugReports.filter(
+    (report) => report.status === "RESOLVED"
+  ).length;
+
+  const resolutionRate =
+    totalBugs === 0
+      ? 0
+      : Math.round((resolvedBugs / totalBugs) * 100);
+
+  const severityCounts = {
+    Critical: savedBugReports.filter(
+      (report) => report.severity === "Critical"
+    ).length,
+    High: savedBugReports.filter(
+      (report) => report.severity === "High"
+    ).length,
+    Medium: savedBugReports.filter(
+      (report) => report.severity === "Medium"
+    ).length,
+    Low: savedBugReports.filter(
+      (report) => report.severity === "Low"
+    ).length,
+  };
+
   const filteredBugReports = savedBugReports.filter((report) => {
     const searchTerm = bugReportSearch.trim().toLowerCase();
 
@@ -812,6 +842,83 @@ function App() {
             </>
           )}
         </section>
+
+        <section className="analytics-section">
+          <div className="section-heading">
+            <div>
+              <h3>Bug Analytics</h3>
+              <p>Overview of saved bug reports and resolution progress.</p>
+            </div>
+          </div>
+
+          <div className="stats-grid bug-analytics-grid">
+            <StatCard
+              label="Total Bugs"
+              value={totalBugs}
+              icon="▤"
+              tone="purple"
+            />
+            <StatCard
+              label="Open Bugs"
+              value={openBugs}
+              icon="!"
+              tone="red"
+            />
+            <StatCard
+              label="Resolved Bugs"
+              value={resolvedBugs}
+              icon="✓"
+              tone="blue"
+            />
+            <StatCard
+              label="Resolution Rate"
+              value={`${resolutionRate}%`}
+              icon="%"
+              tone="orange"
+            />
+          </div>
+        </section>
+
+        <section className="analytics-section">
+          <div className="section-heading">
+            <div>
+              <h3>Severity Breakdown</h3>
+              <p>Distribution of saved bugs by severity level.</p>
+            </div>
+          </div>
+
+          <div className="severity-chart">
+            {Object.entries(severityCounts).map(([severity, count]) => {
+              const percentage =
+                totalBugs === 0 ? 0 : Math.round((count / totalBugs) * 100);
+
+              return (
+                <div className="severity-chart-row" key={severity}>
+                  <div className="severity-chart-label">
+                    <span>{severity}</span>
+                    <strong>{count}</strong>
+                  </div>
+
+                  <div
+                    className="severity-chart-track"
+                    role="progressbar"
+                    aria-label={`${severity} bugs`}
+                    aria-valuenow={count}
+                    aria-valuemin={0}
+                    aria-valuemax={totalBugs}
+                  >
+                    <div
+                      className={`severity-chart-fill ${severity.toLowerCase()}`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <span className="severity-chart-percentage">{percentage}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         <section className="bug-reports-section" id="bug-reports">
           <div className="bug-reports-header">
             <div>
