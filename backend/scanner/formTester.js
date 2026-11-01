@@ -22,7 +22,7 @@ async function testForms(targetUrl) {
     __dirname,
     "..",
     "reports",
-    "form-test-screenshots"
+    "form-test-screenshots",
   );
 
   fs.mkdirSync(evidenceDir, { recursive: true });
@@ -33,7 +33,7 @@ async function testForms(targetUrl) {
     passed,
     passMessage,
     failMessage,
-    details = {}
+    details = {},
   ) {
     const test = {
       name,
@@ -43,17 +43,11 @@ async function testForms(targetUrl) {
     };
 
     if (!passed && page) {
-      const safeName = name
-        .replace(/[^a-z0-9-_]/gi, "_")
-        .slice(0, 80);
+      const safeName = name.replace(/[^a-z0-9-_]/gi, "_").slice(0, 80);
 
-      const screenshotName =
-        `${Date.now()}-${safeName}.png`;
+      const screenshotName = `${Date.now()}-${safeName}.png`;
 
-      const screenshotPath = path.join(
-        evidenceDir,
-        screenshotName
-      );
+      const screenshotPath = path.join(evidenceDir, screenshotName);
 
       try {
         await page.screenshot({
@@ -61,8 +55,7 @@ async function testForms(targetUrl) {
           fullPage: true,
         });
 
-        test.screenshot =
-          `/reports/form-test-screenshots/${screenshotName}`;
+        test.screenshot = `/reports/form-test-screenshots/${screenshotName}`;
       } catch (error) {
         test.screenshotError = error.message;
       }
@@ -87,10 +80,7 @@ async function testForms(targetUrl) {
     await page.route("**/*", async (route) => {
       const request = route.request();
 
-      if (
-        request.isNavigationRequest() &&
-        request.method() === "POST"
-      ) {
+      if (request.isNavigationRequest() && request.method() === "POST") {
         await route.abort();
         return;
       }
@@ -119,19 +109,20 @@ async function testForms(targetUrl) {
       const formId = await form.getAttribute("id");
       const formName = formId || `Form ${i + 1}`;
 
-      const submitButton = form.locator(
-        'button[type="submit"], input[type="submit"], button:not([type])'
-      ).first();
+      const submitButton = form
+        .locator(
+          'button[type="submit"], input[type="submit"], button:not([type])',
+        )
+        .first();
 
       const hasSubmitButton = await submitButton.count();
 
       const submitEnabled =
-        hasSubmitButton > 0 &&
-        await submitButton.isEnabled();
+        hasSubmitButton > 0 && (await submitButton.isEnabled());
 
       // Test 1: Empty required fields.
       const requiredFields = form.locator(
-        'input[required], select[required], textarea[required]'
+        "input[required], select[required], textarea[required]",
       );
 
       const requiredCount = await requiredFields.count();
@@ -145,23 +136,23 @@ async function testForms(targetUrl) {
           originalValues.push({
             value: await field.inputValue().catch(() => ""),
             checked: await field.isChecked().catch(() => false),
-            tag: await field.evaluate(el => el.tagName.toLowerCase()),
+            tag: await field.evaluate((el) => el.tagName.toLowerCase()),
             type: await field.getAttribute("type"),
           });
 
-          const type = (await field.getAttribute("type") || "").toLowerCase();
+          const type = ((await field.getAttribute("type")) || "").toLowerCase();
 
           if (type === "checkbox" || type === "radio") {
             if (await field.isChecked().catch(() => false)) {
-              await field.uncheck().catch(() => { });
+              await field.uncheck().catch(() => {});
             }
           } else if (type !== "hidden" && type !== "file") {
-            await field.fill("").catch(() => { });
+            await field.fill("").catch(() => {});
           }
         }
 
-        const emptyFormValid = await form.evaluate(
-          element => element.checkValidity()
+        const emptyFormValid = await form.evaluate((element) =>
+          element.checkValidity(),
         );
 
         await record(
@@ -170,7 +161,7 @@ async function testForms(targetUrl) {
           !emptyFormValid,
           "Browser correctly rejected the empty form.",
           "The form passed native validation despite empty required fields.",
-          { requiredFields: requiredCount }
+          { requiredFields: requiredCount },
         );
 
         // Restore original values.
@@ -181,10 +172,10 @@ async function testForms(targetUrl) {
 
           if (type === "checkbox" || type === "radio") {
             if (original.checked) {
-              await field.check().catch(() => { });
+              await field.check().catch(() => {});
             }
           } else if (type !== "hidden" && type !== "file") {
-            await field.fill(original.value).catch(() => { });
+            await field.fill(original.value).catch(() => {});
           }
         }
       } else {
@@ -195,10 +186,9 @@ async function testForms(targetUrl) {
         });
       }
 
-
       // Test 2: Invalid email.
       const emailFields = form.locator(
-        'input[type="email"], input[name="email"], input[id="email"]'
+        'input[type="email"], input[name="email"], input[id="email"]',
       );
       const emailCount = await emailFields.count();
 
@@ -206,13 +196,13 @@ async function testForms(targetUrl) {
         const emailField = emailFields.first();
         const originalValue = await emailField.inputValue();
         const inputType = (
-          await emailField.getAttribute("type") || "text"
+          (await emailField.getAttribute("type")) || "text"
         ).toLowerCase();
 
         await emailField.fill("invalid-email");
 
-        const invalidEmailAccepted = await emailField.evaluate(
-          (element) => element.checkValidity()
+        const invalidEmailAccepted = await emailField.evaluate((element) =>
+          element.checkValidity(),
         );
 
         const nativeEmailValidationSupported = inputType === "email";
@@ -227,21 +217,19 @@ async function testForms(targetUrl) {
             : "The invalid email passed browser validation.",
           {
             inputType,
-            invalidEmailAccepted
-          }
+            invalidEmailAccepted,
+          },
         );
 
         await emailField.fill(originalValue);
       } else {
-        await record(
-          page,
-          `${formName}: Invalid email`,
-          false,
-          "",
-          "Email field was not found; invalid-email validation could not be tested."
-        );
+        result.tests.push({
+          name: `${formName}: Invalid email`,
+          status: "INFO",
+          message:
+            "No email field was found. Email validation is not applicable to this form.",
+        });
       }
-
 
       // Test 3: Short password.
       const passwordFields = form.locator('input[type="password"]');
@@ -251,7 +239,7 @@ async function testForms(targetUrl) {
         const passwordField = passwordFields.first();
 
         const minLength = Number(
-          await passwordField.getAttribute("minlength") || 0
+          (await passwordField.getAttribute("minlength")) || 0,
         );
 
         if (minLength > 1) {
@@ -259,10 +247,9 @@ async function testForms(targetUrl) {
 
           await passwordField.fill("a");
 
-          const shortPasswordAccepted =
-            await passwordField.evaluate(
-              (element) => element.checkValidity()
-            );
+          const shortPasswordAccepted = await passwordField.evaluate(
+            (element) => element.checkValidity(),
+          );
 
           await record(
             page,
@@ -270,7 +257,7 @@ async function testForms(targetUrl) {
             !shortPasswordAccepted,
             `Browser rejected a password shorter than ${minLength} characters.`,
             "A short password passed browser validation.",
-            { minimumLength: minLength }
+            { minimumLength: minLength },
           );
 
           await passwordField.fill(originalValue);
@@ -295,7 +282,7 @@ async function testForms(targetUrl) {
       }
 
       const fields = form.locator(
-        'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]), select, textarea'
+        'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]), select, textarea',
       );
 
       const fieldCount = await fields.count();
@@ -308,7 +295,7 @@ async function testForms(targetUrl) {
         }
 
         const type = (
-          await field.getAttribute("type") || "text"
+          (await field.getAttribute("type")) || "text"
         ).toLowerCase();
 
         const disabled = await field.isDisabled().catch(() => true);
@@ -316,11 +303,10 @@ async function testForms(targetUrl) {
         if (disabled) continue;
 
         if (type === "checkbox" || type === "radio") {
-          const required =
-            await field.getAttribute("required") !== null;
+          const required = (await field.getAttribute("required")) !== null;
 
           if (required && !(await field.isChecked())) {
-            await field.check().catch(() => { });
+            await field.check().catch(() => {});
           }
 
           continue;
@@ -333,12 +319,10 @@ async function testForms(targetUrl) {
 
         if (type === "password") {
           const minLength = Number(
-            await field.getAttribute("minlength") || 0
+            (await field.getAttribute("minlength")) || 0,
           );
 
-          await field.fill(
-            "QaTestPassword123".padEnd(minLength, "x")
-          );
+          await field.fill("QaTestPassword123".padEnd(minLength, "x"));
 
           continue;
         }
@@ -357,39 +341,40 @@ async function testForms(targetUrl) {
           result.tests.push({
             name: `${formName}: File input`,
             status: "INFO",
-            message: "File upload was skipped because no test file was provided.",
+            message:
+              "File upload was skipped because no test file was provided.",
           });
 
           continue;
         }
 
-        const tagName = await field.evaluate(
-          (element) => element.tagName.toLowerCase()
+        const tagName = await field.evaluate((element) =>
+          element.tagName.toLowerCase(),
         );
 
         if (tagName === "select") {
-          const options = await field.locator("option").evaluateAll(
-            (items) => items.map((option) => ({
+          const options = await field.locator("option").evaluateAll((items) =>
+            items.map((option) => ({
               value: option.value,
               disabled: option.disabled,
-            }))
+            })),
           );
 
           const usableOption = options.find(
-            (option) => option.value && !option.disabled
+            (option) => option.value && !option.disabled,
           );
 
           if (usableOption) {
-            await field.selectOption(usableOption.value).catch(() => { });
+            await field.selectOption(usableOption.value).catch(() => {});
           }
 
           continue;
         }
 
         const name = (
-          await field.getAttribute("name") ||
-          await field.getAttribute("id") ||
-          await field.getAttribute("placeholder") ||
+          (await field.getAttribute("name")) ||
+          (await field.getAttribute("id")) ||
+          (await field.getAttribute("placeholder")) ||
           ""
         ).toLowerCase();
 
@@ -408,8 +393,8 @@ async function testForms(targetUrl) {
         }
       }
 
-      const validBeforeSubmit = await form.evaluate(
-        (element) => element.checkValidity()
+      const validBeforeSubmit = await form.evaluate((element) =>
+        element.checkValidity(),
       );
 
       if (!validBeforeSubmit) {
@@ -436,7 +421,10 @@ async function testForms(targetUrl) {
       await page.waitForTimeout(150);
 
       const messageText = messageSelector
-        ? await page.locator(messageSelector).innerText().catch(() => "")
+        ? await page
+            .locator(messageSelector)
+            .innerText()
+            .catch(() => "")
         : "";
 
       const bodyAfter = await page.locator("body").innerText();
@@ -444,8 +432,8 @@ async function testForms(targetUrl) {
       const changedBody = bodyAfter !== bodyBefore;
 
       const successMessage =
-        /successfully|submitted|thank you|message sent|received/i.test(
-          messageText || (changedBody ? bodyAfter : "")
+        /successfully|submitted|thank you|message sent|received|scanning your website|scan completed|latest scan results/i.test(
+          messageText || (changedBody ? bodyAfter : ""),
         );
 
       await record(
@@ -457,22 +445,21 @@ async function testForms(targetUrl) {
         {
           formId: formId || "",
           message: messageText || "",
-          note:
-            "This verifies frontend behavior only; it does not prove server-side storage.",
-        }
+          note: "This verifies frontend behavior only; it does not prove server-side storage.",
+        },
       );
     }
 
     result.summary.checksPassed = result.tests.filter(
-      (test) => test.status === "PASS"
+      (test) => test.status === "PASS",
     ).length;
 
     result.summary.checksFailed = result.tests.filter(
-      (test) => test.status === "FAIL"
+      (test) => test.status === "FAIL",
     ).length;
 
     result.summary.checksInfo = result.tests.filter(
-      (test) => test.status === "INFO"
+      (test) => test.status === "INFO",
     ).length;
   } catch (error) {
     result.status = "failed";

@@ -1,4 +1,3 @@
-
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
@@ -58,11 +57,15 @@ async function scanWebsite(targetUrl) {
 
     // 3. Detect failed network requests.
     page.on("requestfailed", (request) => {
+      // Main navigation failure is handled by the page.goto catch block.
+      if (request.isNavigationRequest()) {
+        return;
+      }
+
       results.issues.push({
         type: "Failed Request",
         severity: "Medium",
-        message:
-          request.failure()?.errorText || "Request failed",
+        message: request.failure()?.errorText || "Request failed",
         resourceUrl: request.url(),
         url: page.url(),
       });
@@ -92,7 +95,7 @@ async function scanWebsite(targetUrl) {
       __dirname,
       "..",
       "reports",
-      screenshotName
+      screenshotName,
     );
 
     fs.mkdirSync(path.dirname(screenshotPath), {
@@ -107,18 +110,15 @@ async function scanWebsite(targetUrl) {
     results.screenshot = `/reports/${screenshotName}`;
 
     // 6. Collect unique HTTP/HTTPS links.
-    const links = await page.locator("a[href]").evaluateAll(
-      (anchors) =>
-        anchors.map((anchor) => ({
-          text: anchor.innerText.trim() || "(no link text)",
-          href: anchor.href,
-        }))
+    const links = await page.locator("a[href]").evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        text: anchor.innerText.trim() || "(no link text)",
+        href: anchor.href,
+      })),
     );
 
     const uniqueLinks = [
-      ...new Map(
-        links.map((link) => [link.href, link])
-      ).values(),
+      ...new Map(links.map((link) => [link.href, link])).values(),
     ];
 
     let brokenLinkCount = 0;
@@ -166,9 +166,7 @@ async function scanWebsite(targetUrl) {
         results.issues.push({
           type: "Link Check Failed",
           severity: "Low",
-          message: `Could not verify link: ${link.text}. ${
-            error.message
-          }`,
+          message: `Could not verify link: ${link.text}. ${error.message}`,
           resourceUrl: link.href,
           url: targetUrl,
         });
@@ -176,17 +174,13 @@ async function scanWebsite(targetUrl) {
     }
 
     // 7. Detect images that failed to load.
-    const missingImages = await page.locator("img").evaluateAll(
-      (images) =>
-        images
-          .filter(
-            (image) =>
-              !image.complete || image.naturalWidth === 0
-          )
-          .map((image) => ({
-            src: image.src,
-            alt: image.alt || "(missing alt text)",
-          }))
+    const missingImages = await page.locator("img").evaluateAll((images) =>
+      images
+        .filter((image) => !image.complete || image.naturalWidth === 0)
+        .map((image) => ({
+          src: image.src,
+          alt: image.alt || "(missing alt text)",
+        })),
     );
 
     for (const image of missingImages) {
@@ -205,18 +199,47 @@ async function scanWebsite(targetUrl) {
 
     results.summary.consoleErrors = results.issues.filter(
       (issue) =>
-        issue.type === "Console Error" ||
-        issue.type === "JavaScript Error"
+        issue.type === "Console Error" || issue.type === "JavaScript Error",
     ).length;
 
     results.summary.failedRequests = results.issues.filter(
-      (issue) => issue.type === "Failed Request"
+      (issue) => issue.type === "Failed Request",
     ).length;
 
     results.summary.totalIssues = results.issues.length;
   } catch (error) {
     results.status = "failed";
     results.error = error.message;
+
+    // Check whether the main navigation failure was already recorded.
+    const alreadyRecorded = results.issues.some((issue) => {
+      if (issue.type !== "Failed Request" || !issue.resourceUrl) {
+        return false;
+      }
+
+      try {
+        return new URL(issue.resourceUrl).href === new URL(targetUrl).href;
+      } catch {
+        return false;
+      }
+    });
+
+    // Add the error only if it was not recorded by requestfailed.
+    if (!alreadyRecorded) {
+      results.issues.push({
+        type: "Failed Request",
+        severity: "High",
+        message: error.message,
+        resourceUrl: targetUrl,
+        url: targetUrl,
+      });
+    }
+
+    results.summary.failedRequests = results.issues.filter(
+      (issue) => issue.type === "Failed Request",
+    ).length;
+
+    results.summary.totalIssues = results.issues.length;
   } finally {
     if (browser) {
       await browser.close();
