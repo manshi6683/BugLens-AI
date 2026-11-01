@@ -63,4 +63,5 @@ jobs:
         working-directory: backend
         env:
           BUGLENS_DEMO_URL: http://127.0.0.1:5173/
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm test
